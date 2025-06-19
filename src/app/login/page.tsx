@@ -1,80 +1,115 @@
 'use client'
 
-import React, { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { BookOpen, Eye, EyeOff } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BookOpen, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { apiFetch } from "@/lib/api";
 
-export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [formData, setFormData] = useState({
+type AuthFormData = {
+  userName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  agreeToTerms: boolean;
+};
+
+export default function LoginPage() {
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [formData, setFormData] = useState<AuthFormData>({
     userName: "",
     email: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
-  })
-  const router = useRouter()
+  });
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Giả lập đăng nhập - thay thế bằng API thực tế trong ứng dụng
-    console.log("Login attempted with:", { email: formData.email })
-    // Lưu thông tin người dùng vào localStorage (hoặc SessionStorage)
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        email: formData.email,
-        plan: "Free",
-        hearts: 5,
-        streak: { current: 0, lastUpdate: new Date() },
-      })
-    )
-    // Chuyển hướng đến trang dashboard sau khi đăng nhập thành công
-    router.push("/dashboard")
-  }
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    try {
+      const response = await apiFetch("/api/v1/authenticate/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+        requiresAuth: false,
+      });
+      localStorage.setItem("token", response.token);
+      console.log("Login successful:", response);
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An unknown error occurred.");
+      }
+    }
+  };
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!")
-      return
+      setErrorMessage("Passwords do not match");
+      return;
     }
-    if (!formData.agreeToTerms) {
-      alert("Please agree to the terms and conditions")
-      return
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setErrorMessage("Invalid email format");
+      return;
     }
-    // Giả lập đăng ký - thay thế bằng API thực tế trong ứng dụng
-    console.log("Registration attempted with:", { userName: formData.userName, email: formData.email })
-    // Chuyển sang tab login sau khi đăng ký thành công
-    setActiveTab('login')  // Chuyển sang tab login
-  }
+
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    };
+    console.log("Request payload:", payload);
+
+    try {
+      await apiFetch("/api/v1/authenticate/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        requiresAuth: false,
+      });
+      setSuccessMessage("Registration successful! Please log in.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("An unknown error occurred.");
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Section - Gradient Background */}
       <div className="w-1/2 bg-gradient-to-br from-blue-500 via-cyan-500 to-green-500 hidden md:flex items-center justify-center relative">
         <div className="w-1/2 bg-gradient-to-r from-blue-500 to-green-500 hidden md:block">
           <img
-            src="/path_to_your_image.jpg" // Thay đổi với đường dẫn ảnh của bạn
+            src="/images/illustration.jpg"
             alt="Illustration"
             className="w-full h-full object-cover"
           />
         </div>
       </div>
-
-      {/* Right Section - Authentication Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-8">
         <Card className="w-full max-w-md border-0 shadow-none">
           <CardHeader className="text-center py-8">
@@ -100,7 +135,6 @@ export default function AuthPage() {
               </button>
             </div>
 
-            {/* Login Form */}
             {activeTab === 'login' ? (
               <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
@@ -138,6 +172,7 @@ export default function AuthPage() {
                     </Button>
                   </div>
                 </div>
+                {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -145,9 +180,7 @@ export default function AuthPage() {
                       checked={formData.agreeToTerms}
                       onCheckedChange={(checked) => handleInputChange("agreeToTerms", checked as boolean)}
                     />
-                    <Label htmlFor="remember" className="text-sm">
-                      Remember me
-                    </Label>
+                    <Label htmlFor="remember" className="text-sm">Remember me</Label>
                   </div>
                   <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
                     Forgot password?
@@ -161,20 +194,8 @@ export default function AuthPage() {
                 </Button>
               </form>
             ) : (
-              // Sign Up Form
               <form onSubmit={handleRegister} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="userName">Username</Label>
-                  <Input
-                    id="userName"
-                    type="text"
-                    placeholder="Choose a username"
-                    value={formData.userName}
-                    onChange={(e) => handleInputChange("userName", e.target.value)}
-                    required
-                    className="h-12"
-                  />
-                </div>
+              
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -218,7 +239,7 @@ export default function AuthPage() {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange("confirmPassword", e.target.value)}
                       required
                       className="h-12"
                     />
@@ -233,6 +254,8 @@ export default function AuthPage() {
                     </Button>
                   </div>
                 </div>
+                {errorMessage && <p className="text-red-500 text-sm">{errorMessage}</p>}
+                {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="terms"
@@ -241,13 +264,9 @@ export default function AuthPage() {
                   />
                   <Label htmlFor="terms" className="text-sm">
                     I agree to the{" "}
-                    <Link href="/terms" className="text-blue-600 hover:underline">
-                      Terms of Service
-                    </Link>{" "}
+                    <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>{" "}
                     and{" "}
-                    <Link href="/privacy" className="text-blue-600 hover:underline">
-                      Privacy Policy
-                    </Link>
+                    <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
                   </Label>
                 </div>
                 <Button
@@ -288,5 +307,5 @@ export default function AuthPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
