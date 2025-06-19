@@ -55,6 +55,9 @@ export default function SettingsPage() {
     },
   })
 
+  const [theme, setTheme] = useState<string>("Auto")
+  const [language, setLanguage] = useState<string>("Tiếng Việt")
+
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) {
@@ -78,6 +81,33 @@ export default function SettingsPage() {
     }))
   }
 
+  useEffect(() => {
+    // Đọc cài đặt người dùng từ localStorage
+    const userData = localStorage.getItem("user")
+    if (userData) {
+      const user = JSON.parse(userData)
+      setSettings((prev) => ({
+        ...prev,
+        userName: user.userName || "",
+        email: user.email || "",
+        plan: user.plan || "Free",
+      }))
+    }
+
+    // Đọc theme từ localStorage
+    const savedTheme = localStorage.getItem("theme")
+    if (savedTheme) {
+      setTheme(savedTheme)
+      document.documentElement.classList.toggle("dark", savedTheme === "dark")
+    }
+
+    // Đọc ngôn ngữ từ localStorage
+    const savedLanguage = localStorage.getItem("language")
+    if (savedLanguage) {
+      setLanguage(savedLanguage)
+    }
+  }, [])
+
   const handleSaveProfile = () => {
     const userData = localStorage.getItem("user")
     if (userData) {
@@ -88,6 +118,31 @@ export default function SettingsPage() {
     }
     alert("Profile updated successfully!")
   }
+
+   // Lưu cài đặt theme vào localStorage và cập nhật giao diện
+  useEffect(() => {
+    localStorage.setItem("theme", theme)
+    if (theme === "Tối") {
+      document.documentElement.classList.add("dark")
+    } else if (theme === "Sáng") {
+      document.documentElement.classList.remove("dark")
+    } else {
+      // Auto: theo hệ điều hành
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        document.documentElement.classList.add("dark")
+      } else {
+        document.documentElement.classList.remove("dark")
+      }
+    }
+  }, [theme])
+
+  // Lưu ngôn ngữ vào localStorage
+  useEffect(() => {
+    localStorage.setItem("language", language)
+  }, [language])
+
+  // Hàm để chọn ngôn ngữ
+  const t = (vi: string, en: string) => language === "English" ? en : vi
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -240,6 +295,33 @@ export default function SettingsPage() {
                   </CardTitle>
                   <CardDescription>Customize your audio experience</CardDescription>
                 </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1 flex items-center justify-between border-b border-white/10 py-2">
+                      <div className="text-sm text-gray-400">{t("Hình nền", "Theme")}</div>
+                      <select
+                        value={theme}
+                        onChange={(e) => setTheme(e.target.value)}
+                        className="bg-transparent border border-white/20 rounded-xl px-4 py-1 text-white"
+                      >
+                        <option>Auto</option>
+                        <option>Sáng</option>
+                        <option>Tối</option>
+                      </select>
+                    </div>
+                    <div className="flex-1 flex items-center justify-between border-b border-white/10 py-2">
+                      <div className="text-sm text-gray-400">{t("Ngôn ngữ", "Language")}</div>
+                      <select
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="bg-transparent border border-white/20 rounded-xl px-4 py-1 text-white"
+                      >
+                        <option>Tiếng Việt</option>
+                        <option>English</option>
+                      </select>
+                    </div>
+                  </div>
+                </CardContent>
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
@@ -405,4 +487,4 @@ export default function SettingsPage() {
       </div>
     </div>
   )
-}
+} 
