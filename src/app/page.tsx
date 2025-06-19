@@ -78,7 +78,7 @@ export default function HomePage() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
               <BookOpen className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">LinguaLearn</span>
+            <span className="text-xl font-bold text-gray-900">English Quest</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link href="/login">
@@ -101,10 +101,6 @@ export default function HomePage() {
               AI-Powered Learning
             </span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join millions of learners worldwide. Our gamified approach makes language learning fun, effective, and
-            addictive.
-          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register">
               <Button
@@ -126,7 +122,7 @@ export default function HomePage() {
       {/* Features Section */}
       <section className="py-16 px-4 bg-white">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Why Choose LinguaLearn?</h2>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Welcome to English Quest?</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <Card key={index} className="text-center border-0 shadow-lg">
@@ -149,7 +145,7 @@ export default function HomePage() {
       <section className="py-16 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">Choose Your Learning Plan</h2>
-          <p className="text-center text-gray-600 mb-12">Start free and upgrade when you're ready for more features</p>
+          <p className="text-center text-gray-600 mb-12">Start free and upgrade when you are ready for more features</p>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {plans.map((plan, index) => (
               <Card

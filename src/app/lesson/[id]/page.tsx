@@ -288,7 +288,7 @@ export default function LessonPage({ params }: { params: { id: string } }) {
             </div>
             <h2 className="text-2xl font-bold text-red-600 mb-2">Out of Hearts!</h2>
             <p className="text-gray-600 mb-6">
-              You've run out of hearts. Don't worry, you can restart the level and try again!
+              You have run out of hearts. Do not worry, you can restart the level and try again!
             </p>
             <div className="space-y-3">
               <Button onClick={handleNext} className="w-full">

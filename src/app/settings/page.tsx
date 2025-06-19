@@ -183,7 +183,7 @@ export default function SettingsPage() {
                     <Bell className="h-5 w-5" />
                     <span>Notification Preferences</span>
                   </CardTitle>
-                  <CardDescription>Choose what notifications you'd like to receive</CardDescription>
+                  <CardDescription>Choose what notifications you would like to receive</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">

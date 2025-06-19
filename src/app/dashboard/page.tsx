@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Heart, Flame, Trophy, BookOpen, Play, Lock, Crown, MessageCircle, Settings, LogOut } from "lucide-react"
+import { Trophy, BookOpen, Play, Lock, Crown, MessageCircle, Settings, LogOut } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -108,20 +108,9 @@ export default function DashboardPage() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
               <BookOpen className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">LinguaLearn</span>
+            <span className="text-xl font-bold text-gray-900">English Quest</span>
           </div>
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Heart className="h-5 w-5 text-red-500" />
-              <span className="font-semibold">{user.hearts}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Flame className="h-5 w-5 text-orange-500" />
-              <span className="font-semibold">{user.streak.current}</span>
-            </div>
-            <Badge variant={user.plan === "Free" ? "secondary" : user.plan === "Support" ? "default" : "destructive"}>
-              {user.plan}
-            </Badge>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
             </Button>
@@ -146,20 +135,7 @@ export default function DashboardPage() {
                 <CardDescription>{user.email}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Current Streak</span>
-                  <div className="flex items-center space-x-1">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <span className="font-semibold">{user.streak.current} days</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Hearts</span>
-                  <div className="flex items-center space-x-1">
-                    <Heart className="h-4 w-4 text-red-500" />
-                    <span className="font-semibold">{user.hearts}/5</span>
-                  </div>
-                </div>
+                
                 <div className="space-y-2">
                   <Link href="/leaderboard">
                     <Button variant="outline" className="w-full justify-start">

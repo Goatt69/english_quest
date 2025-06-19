@@ -253,7 +253,7 @@ export default function ChatTutorPage() {
 
                 {!canSendMessage() && userPlan !== "Premium" && (
                   <div className="mt-2 text-center">
-                    <p className="text-sm text-gray-600 mb-2">You've reached your daily question limit.</p>
+                    <p className="text-sm text-gray-600 mb-2">You have reached your daily question limit.</p>
                     <Link href="/pricing">
                       <Button size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600">
                         Upgrade for Unlimited Access
