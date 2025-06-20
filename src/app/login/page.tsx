@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ type AuthFormData = {
 };
 
 export default function LoginPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -49,11 +51,20 @@ export default function LoginPage() {
         }),
         requiresAuth: false,
       });
-      localStorage.setItem("token", response.token);
+      localStorage.setItem("token", response.accessToken);
+      if (response.user) {
+        localStorage.setItem("user", JSON.stringify(response.user));
+      }
       console.log("Login successful:", response);
+      router.push("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
-        setErrorMessage(error.message);
+        const errorMessage = error.message;
+        if (errorMessage.includes("401")) {
+          setErrorMessage("Invalid Email or Passsword! Please try again.");
+        } else {
+          setErrorMessage("An unknown error occurred.");
+        }
       } else {
         setErrorMessage("An unknown error occurred.");
       }
@@ -103,11 +114,6 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       <div className="w-1/2 bg-gradient-to-br from-blue-500 via-cyan-500 to-green-500 hidden md:flex items-center justify-center relative">
         <div className="w-1/2 bg-gradient-to-r from-blue-500 to-green-500 hidden md:block">
-          <img
-            src="/images/illustration.jpg"
-            alt="Illustration"
-            className="w-full h-full object-cover"
-          />
         </div>
       </div>
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-8">
@@ -195,7 +201,6 @@ export default function LoginPage() {
               </form>
             ) : (
               <form onSubmit={handleRegister} className="space-y-6">
-              
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input

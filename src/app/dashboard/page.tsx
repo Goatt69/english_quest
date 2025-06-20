@@ -1,103 +1,108 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Trophy, BookOpen, Play, Lock, Crown, MessageCircle, Settings, LogOut } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api"; // Import the API utility
 
+// User interface (unchanged)
 interface User {
-  userName: string
-  email: string
-  plan: string
-  hearts: number
+  userName: string;
+  email: string;
+  plan: string;
+  hearts: number;
   streak: {
-    current: number
-    lastUpdate: string
-  }
+    current: number;
+    lastUpdate: string;
+  };
 }
 
+// Updated Section interface based on API response
 interface Section {
-  id: string
-  title: string
-  description: string
-  levels: Level[]
-  isUnlocked: boolean
-}
-
-interface Level {
-  id: string
-  title: string
-  progress: number
-  isCompleted: boolean
-  isUnlocked: boolean
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+  imageUrl: string | null;
+  iconUrl: string | null;
+  totalLevels: number;
+  estimatedMinutes: number;
+  isLocked: boolean;
+  requiredPlan: string | null;
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const sections: Section[] = [
-    {
-      id: "1",
-      title: "Basics",
-      description: "Learn fundamental vocabulary and phrases",
-      isUnlocked: true,
-      levels: [
-        { id: "1-1", title: "Greetings", progress: 100, isCompleted: true, isUnlocked: true },
-        { id: "1-2", title: "Family", progress: 75, isCompleted: false, isUnlocked: true },
-        { id: "1-3", title: "Numbers", progress: 0, isCompleted: false, isUnlocked: true },
-        { id: "1-4", title: "Colors", progress: 0, isCompleted: false, isUnlocked: false },
-      ],
-    },
-    {
-      id: "2",
-      title: "Food & Drink",
-      description: "Master food-related vocabulary",
-      isUnlocked: true,
-      levels: [
-        { id: "2-1", title: "Fruits", progress: 0, isCompleted: false, isUnlocked: true },
-        { id: "2-2", title: "Vegetables", progress: 0, isCompleted: false, isUnlocked: false },
-        { id: "2-3", title: "Meals", progress: 0, isCompleted: false, isUnlocked: false },
-      ],
-    },
-    {
-      id: "3",
-      title: "Travel",
-      description: "Essential phrases for traveling",
-      isUnlocked: false,
-      levels: [
-        { id: "3-1", title: "Airport", progress: 0, isCompleted: false, isUnlocked: false },
-        { id: "3-2", title: "Hotel", progress: 0, isCompleted: false, isUnlocked: false },
-        { id: "3-3", title: "Directions", progress: 0, isCompleted: false, isUnlocked: false },
-      ],
-    },
-  ]
-
+  // Fetch user data and sections on mount
   useEffect(() => {
-    const userData = localStorage.getItem("user")
+    const userData = localStorage.getItem("user");
     if (userData) {
-      setUser(JSON.parse(userData))
+      setUser(JSON.parse(userData));
     } else {
-      router.push("/login")
+      router.push("/login");
+      return;
     }
-  }, [router])
+  
+    console.log("Token before fetching sections:", localStorage.getItem("token"));
+  
+    const fetchSections = async () => {
+      try {
+        const response = await apiFetch("/api/v1/quiz/sections");
+        setSections(response.data);
+      } catch (err) {
+        if (err instanceof Error && err.message.includes("401")) {
+          console.log("Unauthorized - Redirecting to login");
+          localStorage.removeItem("token"); // Xóa token không hợp lệ
+          router.push("/login");
+        } else {
+          setError(err instanceof Error ? err.message : "An unknown error occurred");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchSections();
+  }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user")
-    router.push("/")
+    localStorage.removeItem("user");
+    localStorage.removeItem("token"); // Remove token on logout
+    router.push("/");
+  };
+
+  // Loading state
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (!user) {
-    return <div>Loading...</div>
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Error: {error}
+      </div>
+    );
   }
 
+  // Access control logic (based on your original logic, adjusted for API data)
   const canAccessSection = (section: Section) => {
-    return user.plan !== "Free" || section.id === "1" || section.id === "2"
-  }
+    if (!user) return false;
+    return (
+      user.plan !== "Free" ||
+      section.isLocked === false ||
+      section.requiredPlan === null
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -120,22 +125,21 @@ export default function DashboardPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
+          {/* Sidebar (unchanged) */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-green-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-bold text-blue-600">
-                      {user.userName ? user.userName.charAt(0).toUpperCase() : "U"}
+                      {user?.userName ? user.userName.charAt(0).toUpperCase() : "U"}
                     </span>
                   </div>
-                  <span>{user.userName || "User"}</span>
+                  <span>{user?.userName || "User"}</span>
                 </CardTitle>
-                <CardDescription>{user.email}</CardDescription>
+                <CardDescription>{user?.email}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                
                 <div className="space-y-2">
                   <Link href="/leaderboard">
                     <Button variant="outline" className="w-full justify-start">
@@ -156,7 +160,7 @@ export default function DashboardPage() {
                     </Button>
                   </Link>
                 </div>
-                {user.plan === "Free" && (
+                {user?.plan === "Free" && (
                   <div className="p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border">
                     <h3 className="font-semibold text-sm mb-2">Upgrade to Premium</h3>
                     <p className="text-xs text-gray-600 mb-3">Unlock all content and remove ads</p>
@@ -175,7 +179,7 @@ export default function DashboardPage() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user.userName || "User"}!</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.userName || "User"}!</h1>
               <p className="text-gray-600">Continue your language learning journey</p>
             </div>
 
@@ -195,36 +199,16 @@ export default function DashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {section.levels.map((level) => (
-                        <Card
-                          key={level.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
-                            !level.isUnlocked || !canAccessSection(section) ? "opacity-50 cursor-not-allowed" : ""
-                          }`}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-semibold text-sm">{level.title}</h3>
-                              {level.isCompleted ? (
-                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                  <Trophy className="h-3 w-3 text-white" />
-                                </div>
-                              ) : level.isUnlocked && canAccessSection(section) ? (
-                                <Link href={`/lesson/${level.id}`}>
-                                  <Button size="sm" variant="outline">
-                                    <Play className="h-3 w-3" />
-                                  </Button>
-                                </Link>
-                              ) : (
-                                <Lock className="h-4 w-4 text-gray-400" />
-                              )}
-                            </div>
-                            <Progress value={level.progress} className="h-2" />
-                            <p className="text-xs text-gray-500 mt-1">{level.progress}% complete</p>
-                          </CardContent>
-                        </Card>
-                      ))}
+                    <div className="space-y-2">
+                      <p>Total Levels: {section.totalLevels}</p>
+                      <p>Estimated Time: {section.estimatedMinutes} minutes</p>
+                      {canAccessSection(section) ? (
+                        <Link href={`/section/${section.id}`}>
+                          <Button>Start Section</Button>
+                        </Link>
+                      ) : (
+                        <Badge variant="outline">Locked</Badge>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -234,5 +218,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
