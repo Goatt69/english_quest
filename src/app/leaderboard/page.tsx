@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Medal, Award, Crown, ArrowLeft, Flame, Target } from "lucide-react"
+import { Trophy, ArrowLeft, Target, Crown, Medal, Award } from "lucide-react"
 import Link from "next/link"
+import { API_ENDPOINTS } from "@/lib/configURL"
 
 interface LeaderboardEntry {
   rank: number
@@ -14,41 +14,54 @@ interface LeaderboardEntry {
   userAvatar?: string
   overallAccuracy: number
   rankingScore: number
-  completedSections?: number
-  completedLevels?: number
-  plan?: string // Thêm nếu backend hỗ trợ
+  plan?: string
 }
 
 export default function LeaderboardPage() {
-  const [activeTab, setActiveTab] = useState("weekly")
-  const [weeklyData, setWeeklyData] = useState<LeaderboardEntry[]>([])
-  const [monthlyData, setMonthlyData] = useState<LeaderboardEntry[]>([])
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch dữ liệu từ API
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
-      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...a82BPJvejhjke9oyFpzqojwl2nAE9IOBhI6dSnwQpL4" // Thay bằng token thực tế
-      const response = await fetch("http://localhost:8000/api/v1/leaderboard?skip=0&limit=20", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "text/plain",
-        },
-      })
-      const data = await response.json()
-      if (data.success) {
-        const entries = data.entries.map((entry: LeaderboardEntry) => ({
-          rank: entry.rank,
-          userName: entry.userName || "Unknown",
-          userAvatar: entry.userAvatar || "",
-          overallAccuracy: entry.overallAccuracy || 0,
-          rankingScore: entry.rankingScore || 0,
-        }))
-        setWeeklyData(entries) // Hiện tại dùng chung cho cả weekly và monthly
-        setMonthlyData(entries) // Cần backend phân biệt nếu muốn khác nhau
+      const token = localStorage.getItem("token")
+      if (!token) {
+        console.error("No token found")
+        setLoading(false)
+        return
       }
-      setLoading(false)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+      try {
+        const response = await fetch(`${apiUrl}${API_ENDPOINTS.LEADERBOARD}?skip=0&limit=20`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        })
+        if (!response.ok) {
+          console.error("Failed to fetch leaderboard")
+          setLoading(false)
+          return
+        }
+        const data = await response.json()
+        if (data.success) {
+          const entries = data.entries.map((entry: LeaderboardEntry) => ({
+            rank: entry.rank,
+            userName: entry.userName || "Unknown",
+            userAvatar: entry.userAvatar || "",
+            overallAccuracy: entry.overallAccuracy || 0,
+            rankingScore: entry.rankingScore || 0,
+            plan: entry.plan || "Free",
+          }))
+          setLeaderboardData(entries)
+        } else {
+          console.error("API returned unsuccessful response")
+        }
+      } catch (error) {
+        console.error("Error fetching leaderboard:", error)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchData()
   }, [])
@@ -134,68 +147,16 @@ export default function LeaderboardPage() {
             <p className="text-gray-600">Compete with learners worldwide and climb the ranks!</p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="weekly">This Week</TabsTrigger>
-              <TabsTrigger value="monthly">This Month</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="weekly">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Trophy className="h-5 w-5 text-yellow-500" />
-                    <span>Weekly Champions</span>
-                  </CardTitle>
-                  <CardDescription>Top performers this week based on points earned</CardDescription>
-                </CardHeader>
-                <CardContent>{renderLeaderboard(weeklyData)}</CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="monthly">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Crown className="h-5 w-5 text-yellow-500" />
-                    <span>Monthly Legends</span>
-                  </CardTitle>
-                  <CardDescription>Top performers this month based on total points</CardDescription>
-                </CardHeader>
-                <CardContent>{renderLeaderboard(monthlyData)}</CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-
-          <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Crown className="h-6 w-6 text-yellow-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Weekly Winner</h3>
-                <p className="text-sm text-gray-600">Earn the most points this week to claim the crown!</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Flame className="h-6 w-6 text-orange-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Streak Master</h3>
-                <p className="text-sm text-gray-600">Maintain the longest learning streak to earn this title!</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Target className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="font-semibold mb-2">Accuracy Expert</h3>
-                <p className="text-sm text-gray-600">Achieve the highest accuracy rate to become an expert!</p>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                <span>Global Leaderboard</span>
+              </CardTitle>
+              <CardDescription>Top performers based on ranking score</CardDescription>
+            </CardHeader>
+            <CardContent>{renderLeaderboard(leaderboardData)}</CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { BookOpen, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { API_ENDPOINTS } from "@/lib/configURL";
 
 type AuthFormData = {
   userName: string;
@@ -42,7 +43,7 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage(null);
     try {
-      const response = await apiFetch("/api/v1/authenticate/login", {
+      const response = await apiFetch(API_ENDPOINTS.LOGIN, { // Sử dụng API_ENDPOINTS
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +95,7 @@ export default function LoginPage() {
     console.log("Request payload:", payload);
 
     try {
-      await apiFetch("/api/v1/authenticate/register", {
+      await apiFetch(API_ENDPOINTS.REGISTER, { // Sử dụng API_ENDPOINTS
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

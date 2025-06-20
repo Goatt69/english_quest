@@ -8,6 +8,7 @@ import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut } from "
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api"; // Import the API utility
+import { API_ENDPOINTS } from "@/lib/configURL";
 
 // User interface (unchanged)
 interface User {
@@ -56,12 +57,12 @@ export default function DashboardPage() {
   
     const fetchSections = async () => {
       try {
-        const response = await apiFetch("/api/v1/quiz/sections");
+        const response = await apiFetch(API_ENDPOINTS.SECTIONS); // Sử dụng API_ENDPOINTS
         setSections(response.data);
       } catch (err) {
         if (err instanceof Error && err.message.includes("401")) {
           console.log("Unauthorized - Redirecting to login");
-          localStorage.removeItem("token"); // Xóa token không hợp lệ
+          localStorage.removeItem("token");
           router.push("/login");
         } else {
           setError(err instanceof Error ? err.message : "An unknown error occurred");
