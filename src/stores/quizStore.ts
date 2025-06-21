@@ -1,5 +1,3 @@
-"use client";
-
 import { create } from "zustand";
 import { apiFetch } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/configURL";
@@ -15,6 +13,7 @@ interface QuizState {
   error: string | null;
   quizComplete: any | null;
   levelFailed: boolean;
+  lastAnswerResult: { isCorrect: boolean; message: string } | null;
   startQuiz: (levelId: string) => Promise<void>;
   submitAnswer: (questionId: string, userAnswer: string) => Promise<void>;
   abandonQuiz: () => Promise<void>;
@@ -31,24 +30,28 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   error: null,
   quizComplete: null,
   levelFailed: false,
+  lastAnswerResult: null,
 
   startQuiz: async (levelId: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, lastAnswerResult: null });
     try {
+      console.log("Starting quiz with levelId:", levelId);
       const response = await apiFetch(API_ENDPOINTS.QUIZ_START, {
         method: "POST",
         body: JSON.stringify({ levelId }),
       });
-      const { attemptId, question, heartsRemaining, totalQuestions } = response.data;
+      console.log("API Response:", response.data);
+      const { attemptId, session, firstQuestion } = response.data;
       set({
         attemptId,
         levelId,
-        currentQuestion: question,
-        heartsRemaining,
-        totalQuestions,
+        currentQuestion: firstQuestion.question || firstQuestion, // Sửa ở đây
+        totalQuestions: session.totalQuestions,
+        heartsRemaining: session.heartsRemaining,
         isLoading: false,
       });
     } catch (err) {
+      console.error("Start quiz error:", err);
       set({
         error: err instanceof Error ? err.message : "Failed to start quiz",
         isLoading: false,
@@ -59,13 +62,18 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   submitAnswer: async (questionId: string, userAnswer: string) => {
     set({ isLoading: true, error: null });
     try {
-      const { attemptId } = get();
+      const { levelId } = get();
+      if (!levelId) {
+        throw new Error("Level ID is not available");
+      }
       const response = await apiFetch(API_ENDPOINTS.QUIZ_ANSWER, {
         method: "POST",
-        body: JSON.stringify({ attemptId, questionId, userAnswer }),
+        body: JSON.stringify({ levelId, questionId, userAnswer }),
       });
+      console.log("Submit answer response:", response.data);
       const {
         isCorrect,
+        message,
         heartsRemaining,
         nextQuestion,
         quizComplete,
@@ -74,10 +82,12 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
       set((state) => ({
         heartsRemaining,
-        currentQuestion: nextQuestion || null,
+        currentQuestion: nextQuestion?.question || nextQuestion || null, // Sửa ở đây
+        totalQuestions: nextQuestion ? state.totalQuestions : state.totalQuestions,
         answers: [...state.answers, { questionId, userAnswer }],
         quizComplete: quizComplete || null,
         levelFailed: levelFailed || false,
+        lastAnswerResult: { isCorrect, message },
         isLoading: false,
       }));
 
@@ -93,26 +103,28 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   },
 
   abandonQuiz: async () => {
-    const { levelId, attemptId } = get();
-    if (!levelId || !attemptId) return;
-
     try {
-      await apiFetch(API_ENDPOINTS.QUIZ_ABANDON(levelId), {
-        method: "POST",
-        body: JSON.stringify({ attemptId }),
-      });
-      set({
-        attemptId: null,
-        levelId: null,
-        currentQuestion: null,
-        heartsRemaining: 0,
-        totalQuestions: 0,
-        answers: [],
-        quizComplete: null,
-        levelFailed: false,
-      });
+      const { levelId } = get();
+      if (levelId) {
+        await apiFetch(`${API_ENDPOINTS.QUIZ_ABANDON}/${levelId}`, {
+          method: "POST",
+        });
+      }
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to abandon quiz" });
+      console.error("Failed to abandon quiz:", err);
     }
+    set({
+      attemptId: null,
+      levelId: null,
+      currentQuestion: null,
+      heartsRemaining: 0,
+      totalQuestions: 0,
+      answers: [],
+      quizComplete: null,
+      levelFailed: false,
+      lastAnswerResult: null,
+      isLoading: false,
+      error: null,
+    });
   },
 }));

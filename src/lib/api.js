@@ -1,4 +1,5 @@
 export const apiFetch = async (endpoint, options = {}) => {
+  const token = localStorage.getItem("token");
   const { requiresAuth = true, ...fetchOptions } = options;
 
   // Initialize headers

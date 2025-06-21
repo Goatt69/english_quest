@@ -1,32 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {Howl} from 'howler';
 
 interface ListeningQuestionProps {
   question: {
     id: string;
     text: string;
-    audioUrl: string;
-    options: string[];
-    maxReplays: number;
+    listening: {
+      audioText: string;
+      wordBank: string[];
+      maxReplays: number;
+    };
   };
-  onAnswer: (answer: string) => void;
+  selectedAnswer: string | null;
+  setSelectedAnswer: (answer: string) => void;
 }
 
-export default function ListeningQuestion({ question, onAnswer }: ListeningQuestionProps) {
+export default function ListeningQuestion({
+  question,
+  selectedAnswer,
+  setSelectedAnswer,
+}: ListeningQuestionProps) {
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const [playCount, setPlayCount] = useState(0);
+  const { listening } = question;
 
-  const sound = new Howl({
-    src: [question.audioUrl],
-    html5: true, // Use HTML5 audio for better mobile support
-  });
+  useEffect(() => {
+    setSelectedAnswer(selectedWords.join(" "));
+  }, [selectedWords, setSelectedAnswer]);
 
   const handlePlay = () => {
-    if (playCount < question.maxReplays) {
-      sound.play();
+    if (playCount < listening.maxReplays) {
+      const utterance = new SpeechSynthesisUtterance(listening.audioText);
+      speechSynthesis.speak(utterance);
       setPlayCount((prev) => prev + 1);
     }
   };
@@ -35,26 +42,29 @@ export default function ListeningQuestion({ question, onAnswer }: ListeningQuest
     setSelectedWords((prev) => [...prev, word]);
   };
 
-  const handleSubmit = () => {
-    onAnswer(selectedWords.join(" "));
-    setSelectedWords([]);
-  };
-
   return (
     <div className="space-y-4">
-      <p className="text-lg">{question.text}</p>
-      <Button onClick={handlePlay} disabled={playCount >= question.maxReplays}>
-        Play Audio ({question.maxReplays - playCount} left)
+      <p className="text-lg font-medium text-gray-800">{question.text}</p>
+      <Button
+        onClick={handlePlay}
+        disabled={playCount >= listening.maxReplays}
+        className="bg-blue-500 hover:bg-blue-600 text-white"
+      >
+        Play Audio ({listening.maxReplays - playCount} left)
       </Button>
       <div className="flex flex-wrap gap-2">
-        {question.options.map((word, index) => (
-          <Button key={index} variant="outline" onClick={() => handleWordClick(word)}>
+        {listening.wordBank.map((word, index) => (
+          <Button
+            key={index}
+            variant="outline"
+            className="py-2 px-4 hover:bg-gray-100"
+            onClick={() => handleWordClick(word)}
+          >
             {word}
           </Button>
         ))}
       </div>
-      <p>Selected: {selectedWords.join(" ")}</p>
-      <Button onClick={handleSubmit}>Submit</Button>
+      <p className="text-sm text-gray-600">Selected: {selectedWords.join(" ")}</p>
     </div>
   );
 }

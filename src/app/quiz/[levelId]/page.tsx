@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuizStore } from "@/stores/quizStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MultipleChoiceQuestion from "@/components/quiz/MultipleChoiceQuestion";
 import ListeningQuestion from "@/components/quiz/ListeningQuestion";
+import FillInTheBlankQuestion from "@/components/quiz/FillInTheBlankQuestion";
 
-export default function QuizPage({ params }: { params: { levelId: string } }) {
+export default function QuizPage({ params: paramsPromise }: { params: Promise<{ levelId: string }> }) {
+  const params = React.use(paramsPromise);
   const router = useRouter();
   const {
     startQuiz,
@@ -21,7 +23,10 @@ export default function QuizPage({ params }: { params: { levelId: string } }) {
     quizComplete,
     levelFailed,
     abandonQuiz,
+    lastAnswerResult,
   } = useQuizStore();
+
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
   useEffect(() => {
     if (params.levelId) {
@@ -29,19 +34,48 @@ export default function QuizPage({ params }: { params: { levelId: string } }) {
     }
   }, [params.levelId, startQuiz]);
 
-  const handleAnswer = (answer: string) => {
-    if (currentQuestion) {
-      useQuizStore.getState().submitAnswer(currentQuestion.id, answer);
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!quizComplete && !levelFailed && currentQuestion) {
+        event.preventDefault();
+        event.returnValue = "Are you sure you want to leave? Your quiz progress will be lost.";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [quizComplete, levelFailed, currentQuestion]);
+
+  useEffect(() => {
+    if (lastAnswerResult && !lastAnswerResult.isCorrect) {
+      alert(lastAnswerResult.message);
+      useQuizStore.setState({ lastAnswerResult: null });
+    }
+  }, [lastAnswerResult]);
+
+  useEffect(() => {
+    setSelectedAnswer(null);
+  }, [currentQuestion]);
+
+  const handleSubmit = async () => {
+    if (selectedAnswer && currentQuestion) {
+      await useQuizStore.getState().submitAnswer(currentQuestion.id, selectedAnswer);
     }
   };
 
   const handleQuit = async () => {
-    await abandonQuiz();
-    router.push("/dashboard");
+    if (window.confirm("Are you sure you want to quit the quiz? Your progress will be lost.")) {
+      await abandonQuiz();
+      router.push("/dashboard");
+    }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center">Error: {error}</div>;
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center">Error: {error}</div>;
+  }
 
   if (quizComplete) {
     return (
@@ -51,7 +85,7 @@ export default function QuizPage({ params }: { params: { levelId: string } }) {
             <CardTitle>Quiz Completed!</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Score: {quizComplete.score}</p>
+            <p>Score: {quizComplete.results.score}</p>
             <p>Total Questions: {totalQuestions}</p>
             <Button onClick={() => router.push("/dashboard")} className="mt-4">
               Back to Dashboard
@@ -80,7 +114,9 @@ export default function QuizPage({ params }: { params: { levelId: string } }) {
     );
   }
 
-  if (!currentQuestion) return <div className="min-h-screen flex items-center justify-center">No question available</div>;
+  if (!currentQuestion) {
+    return <div className="min-h-screen flex items-center justify-center">No question available</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
@@ -93,13 +129,45 @@ export default function QuizPage({ params }: { params: { levelId: string } }) {
           <p>Question {answers.length + 1} of {totalQuestions}</p>
         </CardHeader>
         <CardContent>
-          {currentQuestion.type === 0 && (
-            <MultipleChoiceQuestion question={currentQuestion} onAnswer={handleAnswer} />
+            {currentQuestion && (
+              <>
+                {currentQuestion.type === 0 && (
+                  <MultipleChoiceQuestion
+                    question={currentQuestion}
+                    selectedAnswer={selectedAnswer}
+                    setSelectedAnswer={setSelectedAnswer}
+                  />
+                )}
+                {currentQuestion.type === 1 && (
+                  <MultipleChoiceQuestion
+                    question={currentQuestion}
+                    selectedAnswer={selectedAnswer}
+                    setSelectedAnswer={setSelectedAnswer}
+                  />
+                )}
+                {currentQuestion.type === 2 && (
+                  <FillInTheBlankQuestion
+                    question={currentQuestion}
+                    selectedAnswer={selectedAnswer}
+                    setSelectedAnswer={setSelectedAnswer}
+                  />
+                )}
+                {currentQuestion.type === 4 && (
+                  <ListeningQuestion
+                    question={currentQuestion}
+                    selectedAnswer={selectedAnswer}
+                    setSelectedAnswer={setSelectedAnswer}
+                  />
+                )}
+                {![0, 1, 2, 4].includes(currentQuestion.type) && (
+                  <p>Loại câu hỏi không được hỗ trợ: {currentQuestion.type}</p>
+                )}
+              </>
           )}
-          {currentQuestion.type === 4 && (
-            <ListeningQuestion question={currentQuestion} onAnswer={handleAnswer} />
-          )}
-          <Button variant="outline" onClick={handleQuit} className="mt-4">
+          <Button onClick={handleSubmit} disabled={!selectedAnswer} className="mt-4">
+            Submit Answer
+          </Button>
+          <Button variant="outline" onClick={handleQuit} className="mt-4 ml-4">
             Quit Quiz
           </Button>
         </CardContent>

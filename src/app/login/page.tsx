@@ -115,6 +115,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       <div className="w-1/2 bg-gradient-to-br from-blue-500 via-cyan-500 to-green-500 hidden md:flex items-center justify-center relative">
         <div className="w-1/2 bg-gradient-to-r from-blue-500 to-green-500 hidden md:block">
+        <img
+            src="/path_to_your_image.jpg" // Thay đổi với đường dẫn ảnh của bạn
+            alt="Illustration"
+            className="w-full h-full object-cover"
+          />
         </div>
       </div>
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-8">
