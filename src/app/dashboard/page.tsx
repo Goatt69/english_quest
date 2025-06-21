@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api"; // Import the API utility
 import { API_ENDPOINTS } from "@/lib/configURL";
-
+import { useAuth } from '@/hooks/useAuth';
 // User interface (unchanged)
 interface User {
   userName: string;
@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { logout } = useAuth();
 
   // Fetch user data and sections on mount
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function DashboardPage() {
       return;
     }
   
-    console.log("Token before fetching sections:", localStorage.getItem("token"));
+    // console.log("Token before fetching sections:", localStorage.getItem("token"));
   
     const fetchSections = async () => {
       try {
@@ -62,7 +63,8 @@ export default function DashboardPage() {
       } catch (err) {
         if (err instanceof Error && err.message.includes("401")) {
           console.log("Unauthorized - Redirecting to login");
-          localStorage.removeItem("token");
+          // localStorage.removeItem("token");
+          logout();
           router.push("/login");
         } else {
           setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -73,11 +75,12 @@ export default function DashboardPage() {
     };
   
     fetchSections();
-  }, [router]);
+  }, [router, logout]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token"); // Remove token on logout
+    logout();
+    // localStorage.removeItem("user");
+    // localStorage.removeItem("token"); // Remove token on logout
     router.push("/");
   };
 

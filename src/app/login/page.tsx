@@ -11,7 +11,7 @@ import { BookOpen, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/configURL";
-
+import { useAuth } from '@/hooks/useAuth';
 type AuthFormData = {
   userName: string;
   email: string;
@@ -22,6 +22,7 @@ type AuthFormData = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -57,6 +58,7 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(response.user));
       }
       console.log("Login successful:", response);
+      login(response.accessToken, response.user);
       router.push("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
