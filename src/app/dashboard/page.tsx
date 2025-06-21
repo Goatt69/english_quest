@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut } from "lucide-react";
+import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api"; // Import the API utility
@@ -151,16 +151,16 @@ export default function DashboardPage() {
                       Leaderboard
                     </Button>
                   </Link>
-                  <Link href="/chat-tutor">
+                  <Link href="/hangman">
                     <Button variant="outline" className="w-full justify-start">
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      AI Tutor
+                      <Gamepad2 className="h-4 w-4 mr-2" />
+                      Hangman
                     </Button>
                   </Link>
                   <Link href="/settings">
                     <Button variant="outline" className="w-full justify-start">
                       <Settings className="h-4 w-4 mr-2" />
-                      Settings
+                      Settings123
                     </Button>
                   </Link>
                 </div>
