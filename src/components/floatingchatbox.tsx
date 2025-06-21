@@ -8,7 +8,7 @@ interface Message {
   content: string;
 }
 
-import styles from './FloatingChatbox.module.css'; // Sẽ tạo file này ở Bước 2
+import styles from './FloatingChatbox.module.css'; 
 
 export default function FloatingChatbox() {
   const [messages, setMessages] = useState<Message[]>([]);
