@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import ClientChatboxWrapper from '../components/ClientChatboxWrapper';
+import { AuthProvider } from '@/components/AuthContext';
+
 
 export const metadata: Metadata = {
   title: 'v0 App',
@@ -14,7 +17,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+          <ClientChatboxWrapper />
+        </AuthProvider>
+      </body>
     </html>
   )
 }
