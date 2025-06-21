@@ -1,0 +1,4 @@
+.hangmanCanvas {
+  border: 1px solid #ccc; /* Ví dụ: thêm border cho canvas để dễ hình dung */
+  border-radius: 8px;
+}
