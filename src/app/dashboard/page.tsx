@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut } from "lucide-react";
+import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api"; // Import the API utility
 import { API_ENDPOINTS } from "@/lib/configURL";
-
+import { useAuth } from '@/hooks/useAuth';
 // User interface (unchanged)
 interface User {
   userName: string;
@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { logout } = useAuth();
 
   // Fetch user data and sections on mount
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function DashboardPage() {
       return;
     }
   
-    console.log("Token before fetching sections:", localStorage.getItem("token"));
+    // console.log("Token before fetching sections:", localStorage.getItem("token"));
   
     const fetchSections = async () => {
       try {
@@ -62,7 +63,8 @@ export default function DashboardPage() {
       } catch (err) {
         if (err instanceof Error && err.message.includes("401")) {
           console.log("Unauthorized - Redirecting to login");
-          localStorage.removeItem("token");
+          // localStorage.removeItem("token");
+          logout();
           router.push("/login");
         } else {
           setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -125,10 +127,10 @@ export default function DashboardPage() {
                       Leaderboard
                     </Button>
                   </Link>
-                  <Link href="/chat-tutor">
+                  <Link href="/hangman">
                     <Button variant="outline" className="w-full justify-start">
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      AI Tutor
+                      <Gamepad2 className="h-4 w-4 mr-2" />
+                      Hangman
                     </Button>
                   </Link>
                   <Link href="/settings">

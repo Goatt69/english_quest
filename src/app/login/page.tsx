@@ -1,5 +1,5 @@
 'use client'
-
+import AdBanner from '@/components/AdBanner';
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { BookOpen, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/configURL";
-
+import { useAuth } from '@/hooks/useAuth';
 type AuthFormData = {
   userName: string;
   email: string;
@@ -22,6 +22,7 @@ type AuthFormData = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -57,6 +58,7 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(response.user));
       }
       console.log("Login successful:", response);
+      login(response.accessToken, response.user);
       router.push("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
@@ -114,8 +116,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       <div className="w-1/2 bg-gradient-to-br from-blue-500 via-cyan-500 to-green-500 hidden md:flex items-center justify-center relative">
-        <div className="w-1/2 bg-gradient-to-r from-blue-500 to-green-500 hidden md:block">
-        </div>
+          <AdBanner
+            data-ad-slot="6915441258"
+            data-ad-format="auto"
+            data-full-width-responsive="true"
+        />
       </div>
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-8">
         <Card className="w-full max-w-md border-0 shadow-none">
