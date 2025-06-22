@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'English Quest - Learn English Interactively',
+  description: 'Master English with interactive lessons, gamified learning, and AI-powered tutoring. Start your language learning journey today!',
 }
 
 export default function RootLayout({
@@ -14,7 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Navbar/>
+        <main>{children}</main>
+        <Footer/>
+      </body>
     </html>
   )
 }
