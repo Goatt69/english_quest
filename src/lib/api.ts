@@ -1,7 +1,11 @@
-export const apiFetch = async (endpoint, options = {}) => {
+export interface ApiFetchOptions extends RequestInit {
+  requiresAuth?: boolean;
+}
+
+export const apiFetch = async <T = unknown>(endpoint: string, options: ApiFetchOptions = {}): Promise<T> => {
   const { requiresAuth = true, ...fetchOptions } = options;
-  const headers = {
-    ...fetchOptions.headers,
+  const headers: Record<string, string> = {
+    ...(fetchOptions.headers as Record<string, string>),
     Accept: "application/json",
   };
 
@@ -10,7 +14,6 @@ export const apiFetch = async (endpoint, options = {}) => {
     if (!token) {
       throw new Error("No authentication token found. Please log in.");
     }
-    // Chỉ thêm header Authorization nếu token tồn tại và không phải undefined/null
     headers.Authorization = `Bearer ${token}`;
   }
 
@@ -31,5 +34,5 @@ export const apiFetch = async (endpoint, options = {}) => {
     throw new Error(`API request failed: ${response.status} - ${errorMessage}`);
   }
 
-  return response.json(); // Xóa console.log không cần thiết nếu có
+  return (await response.json()) as T;
 };
