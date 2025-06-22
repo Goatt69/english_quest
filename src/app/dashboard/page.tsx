@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut } from "lucide-react";
+import { Trophy, BookOpen, Lock, Crown, MessageCircle, Settings, LogOut, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/configURL";
+import { useAuth } from '@/hooks/useAuth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 // User interface
@@ -60,6 +61,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { logout } = useAuth();
 
   // Fetch user data and sections on mount
   useEffect(() => {
@@ -70,6 +72,9 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
+  
+    // console.log("Token before fetching sections:", localStorage.getItem("token"));
+      
 
     const fetchSectionsAndLevels = async () => {
       try {
@@ -94,7 +99,8 @@ export default function DashboardPage() {
       } catch (err) {
         if (err instanceof Error && err.message.includes("401")) {
           console.log("Unauthorized - Redirecting to login");
-          localStorage.removeItem("token");
+          // localStorage.removeItem("token");
+          logout();
           router.push("/login");
         } else {
           setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -106,12 +112,6 @@ export default function DashboardPage() {
 
     fetchSectionsAndLevels();
   }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    router.push("/");
-  };
 
   // Loading state
   if (isLoading) {
@@ -145,23 +145,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">English Quest</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Sidebar */}
@@ -186,10 +169,10 @@ export default function DashboardPage() {
                       Leaderboard
                     </Button>
                   </Link>
-                  <Link href="/chat-tutor">
+                  <Link href="/hangman">
                     <Button variant="outline" className="w-full justify-start">
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      AI Tutor
+                      <Gamepad2 className="h-4 w-4 mr-2" />
+                      Hangman
                     </Button>
                   </Link>
                   <Link href="/settings">

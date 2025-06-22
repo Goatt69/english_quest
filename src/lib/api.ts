@@ -1,10 +1,11 @@
-export const apiFetch = async (endpoint, options = {}) => {
-  const token = localStorage.getItem("token");
-  const { requiresAuth = true, ...fetchOptions } = options;
+export interface ApiFetchOptions extends RequestInit {
+  requiresAuth?: boolean;
+}
 
-  // Initialize headers
-  const headers = {
-    ...fetchOptions.headers,
+export const apiFetch = async <T = unknown>(endpoint: string, options: ApiFetchOptions = {}): Promise<T> => {
+  const { requiresAuth = true, ...fetchOptions } = options;
+  const headers: Record<string, string> = {
+    ...(fetchOptions.headers as Record<string, string>),
     Accept: "application/json",
   };
 
@@ -22,13 +23,11 @@ export const apiFetch = async (endpoint, options = {}) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  // Make the fetch request
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
     ...fetchOptions,
     headers,
   });
 
-  // Handle errors
   if (!response.ok) {
     const errorText = await response.text();
     let errorMessage;
@@ -41,6 +40,5 @@ export const apiFetch = async (endpoint, options = {}) => {
     throw new Error(`API request failed: ${response.status} - ${errorMessage}`);
   }
 
-  // Return JSON response
-  return response.json();
+  return (await response.json()) as T;
 };
