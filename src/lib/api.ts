@@ -9,6 +9,12 @@ export const apiFetch = async <T = unknown>(endpoint: string, options: ApiFetchO
     Accept: "application/json",
   };
 
+  // Set Content-Type for requests with a body (POST, PUT, etc.)
+  if (fetchOptions.body && (!fetchOptions.method || fetchOptions.method.toUpperCase() === "POST" || fetchOptions.method.toUpperCase() === "PUT")) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  // Handle authorization
   if (requiresAuth) {
     const token = localStorage.getItem("token");
     if (!token) {
