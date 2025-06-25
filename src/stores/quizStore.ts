@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { apiFetch } from "@/lib/api";
-import { API_ENDPOINTS } from "@/lib/configURL";
+import { publicApi } from "@/lib/publicApi";
 
 interface QuizState {
   attemptId: string | null;
@@ -36,16 +35,13 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     set({ isLoading: true, error: null, lastAnswerResult: null });
     try {
       console.log("Starting quiz with levelId:", levelId);
-      const response = await apiFetch(API_ENDPOINTS.QUIZ_START, {
-        method: "POST",
-        body: JSON.stringify({ levelId }),
-      });
+      const response = await publicApi.startQuiz(levelId);
       console.log("API Response:", response.data);
       const { attemptId, session, firstQuestion } = response.data;
       set({
         attemptId,
         levelId,
-        currentQuestion: firstQuestion.question || firstQuestion, // Sửa ở đây
+        currentQuestion: firstQuestion.question || firstQuestion,
         totalQuestions: session.totalQuestions,
         heartsRemaining: session.heartsRemaining,
         isLoading: false,
@@ -66,9 +62,10 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       if (!levelId) {
         throw new Error("Level ID is not available");
       }
-      const response = await apiFetch(API_ENDPOINTS.QUIZ_ANSWER, {
-        method: "POST",
-        body: JSON.stringify({ levelId, questionId, userAnswer }),
+      const response = await publicApi.submitAnswer({ 
+        levelId, 
+        questionId, 
+        userAnswer 
       });
       console.log("Submit answer response:", response.data);
       const {
@@ -82,7 +79,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
       set((state) => ({
         heartsRemaining,
-        currentQuestion: nextQuestion?.question || nextQuestion || null, // Sửa ở đây
+        currentQuestion: nextQuestion?.question || nextQuestion || null,
         totalQuestions: nextQuestion ? state.totalQuestions : state.totalQuestions,
         answers: [...state.answers, { questionId, userAnswer }],
         quizComplete: quizComplete || null,
@@ -106,9 +103,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     try {
       const { levelId } = get();
       if (levelId) {
-        await apiFetch(`${API_ENDPOINTS.QUIZ_ABANDON}/${levelId}`, {
-          method: "POST",
-        });
+        await publicApi.abandonQuiz(levelId);
       }
     } catch (err) {
       console.error("Failed to abandon quiz:", err);
