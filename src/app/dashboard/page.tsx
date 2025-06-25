@@ -17,6 +17,7 @@ import { publicApi } from "@/lib/publicApi";
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [sections, setSections] = useState<QuizSection[]>([]);
+  const [completedLevels, setCompletedLevels] = useState<string[]>([]); // State để lưu level đã hoàn thành
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -57,6 +58,12 @@ export default function DashboardPage() {
         }));
 
         setSections(sectionsWithLevels);
+
+        // Giả định lấy danh sách completedLevels từ localStorage hoặc API
+        const storedCompletedLevels = localStorage.getItem("completedLevels");
+        if (storedCompletedLevels) {
+          setCompletedLevels(JSON.parse(storedCompletedLevels));
+        }
       } catch (err) {
         if (err instanceof Error && err.message.includes("401")) {
           console.log("Unauthorized - Redirecting to login");
@@ -83,6 +90,8 @@ export default function DashboardPage() {
         </SharedLayout>
     );
   }
+  // Hàm kiểm tra level đã hoàn thành chưa
+  const isLevelCompleted = (levelId: string) => completedLevels.includes(levelId);
 
   // Error state
   if (error) {
@@ -97,6 +106,26 @@ export default function DashboardPage() {
         </SharedLayout>
     );
   }
+  // Hàm xử lý reset level
+  const handleResetLevel = async (levelId: string) => {
+    try {
+      const response = await apiFetch(`${API_ENDPOINTS.QUIZ_ABANDON}/${levelId}`, {
+        method: "POST",
+      });
+      if (response.status) {
+        // Xóa level khỏi danh sách completedLevels
+        const updatedCompletedLevels = completedLevels.filter((id) => id !== levelId);
+        setCompletedLevels(updatedCompletedLevels);
+        localStorage.setItem("completedLevels", JSON.stringify(updatedCompletedLevels));
+        alert("Level đã được reset thành công!");
+      } else {
+        alert("Có lỗi xảy ra khi reset level.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi reset level:", err);
+      alert("Có lỗi xảy ra khi reset level.");
+    }
+  };
 
   // Access control logic for sections
   const canAccessSection = (section: QuizSection): boolean => {
@@ -177,108 +206,82 @@ export default function DashboardPage() {
                 <p className="text-gray-600">Continue your language learning journey</p>
               </div>
 
-              <div className="space-y-8">
-                {sections.map((section: QuizSection) => (
-                  <Card key={section.id} className={`${!canAccessSection(section) ? "opacity-60" : ""}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="flex items-center space-x-2">
-                            <span>{section.title}</span>
-                            {!canAccessSection(section) && <Lock className="h-4 w-4 text-gray-400" />}
-                          </CardTitle>
-                          <CardDescription>{section.description}</CardDescription>
-                        </div>
-                        {!canAccessSection(section) && <Badge variant="secondary">Premium</Badge>}
+            <div className="space-y-8">
+              {sections.map((section: QuizSection) => (
+                <Card key={section.id} className={`${!canAccessSection(section) ? "opacity-60" : ""}`}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center space-x-2">
+                          <span>{section.title}</span>
+                          {!canAccessSection(section) && <Lock className="h-4 w-4 text-gray-400" />}
+                        </CardTitle>
+                        <CardDescription>{section.description}</CardDescription>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <p><span className="font-medium">Total Levels:</span> {section.totalLevels}</p>
-                          <p><span className="font-medium">Estimated Time:</span> {section.estimatedMinutes} minutes</p>
-                        </div>
-                        
-                        {/* Accordion to display levels */}
-                        <Accordion type="single" collapsible>
-                          <AccordionItem value="levels">
-                            <AccordionTrigger>View Levels ({section.levels?.length || 0})</AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-3">
+                      {!canAccessSection(section) && <Badge variant="secondary">Premium</Badge>}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p>Total Levels: {section.totalLevels}</p>
+                      <p>Estimated Time: {section.estimatedMinutes} minutes</p>
+                      {/* Accordion để hiển thị levels */}
+                      <Accordion type="single" collapsible>
+                        <AccordionItem value="levels">
+                          <AccordionTrigger>Levels ({section.levels?.length || 0})</AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-4">
                                 {section.levels && section.levels.length > 0 ? (
-                                  section.levels.map((level: QuizLevel) => (
-                                    <div
-                                      key={level.id}
-                                      className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                                        canAccessLevel(level) 
-                                          ? "hover:bg-gray-50 border-gray-200" 
-                                          : "bg-gray-50 border-gray-100 opacity-60"
-                                      }`}
-                                    >
-                                      <div className="flex-1">
-                                        <div className="flex items-center space-x-2 mb-1">
-                                          <h4 className="font-medium text-sm">{level.title}</h4>
-                                          {level.difficulty > 0 && (
-                                            <Badge variant="outline" className="text-xs">
-                                              Difficulty {level.difficulty}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        {level.description && (
-                                          <p className="text-xs text-gray-600 mb-2">{level.description}</p>
-                                        )}
-                                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                          <span>Questions: {level.totalQuestions}</span>
-                                          <span>Passing Score: {level.passingScore}%</span>
-                                          <span>Max Hearts: {level.maxHearts}</span>
-                                        </div>
-                                      </div>
-                                      <div className="ml-4">
-                                        {canAccessLevel(level) ? (
-                                          <Link href={`/quiz/${level.id}`}>
-                                            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-green-600">
-                                              <BookOpen className="h-3 w-3 mr-1" />
-                                              Start
-                                            </Button>
-                                          </Link>
-                                        ) : (
-                                          <Badge variant="outline" className="text-xs">
-                                            <Lock className="h-3 w-3 mr-1" />
-                                            Locked
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="text-center py-4 text-gray-500">
-                                    <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                    <p className="text-sm">No levels available yet</p>
+                                    section.levels.map((level: QuizLevel) => (
+                                <div
+                                  key={level.id}
+                                  className="flex items-center justify-between p-2 border rounded"
+                                >
+                                  <div>
+                                    <p className="font-semibold">{level.title}</p>
+                                    <p className="text-sm text-gray-600">Difficulty: {level.difficulty}</p>
                                   </div>
+                                  <div className="flex items-center space-x-2">
+                                    {canAccessLevel(level) ? (
+                                      <>
+                                        <Link href={`/quiz/${level.id}`}>
+                                          <Button size="sm">Start</Button>
+                                        </Link>
+                                        {isLevelCompleted(level.id) && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleResetLevel(level.id)}
+                                          >
+                                            Làm lại
+                                          </Button>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <Badge variant="outline">Locked</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                                ) : (
+                                    <div className="text-center py-4 text-gray-500">
+                                        <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No levels available yet</p>
+                                    </div>
                                 )}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {sections.length === 0 && (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Sections Available</h3>
-                      <p className="text-gray-600">Check back later for new learning content!</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
       </div>
+    </div>
     </SharedLayout>
   );
 }

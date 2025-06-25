@@ -12,7 +12,8 @@ interface QuizState {
   error: string | null;
   quizComplete: any | null;
   levelFailed: boolean;
-  lastAnswerResult: { isCorrect: boolean; message: string } | null;
+  heartFailure: boolean; // Thêm trạng thái mới để xử lý hết tim
+  answerResult: { isCorrect: boolean; message: string; correctAnswer?: string } | null;
   startQuiz: (levelId: string) => Promise<void>;
   submitAnswer: (questionId: string, userAnswer: string) => Promise<void>;
   abandonQuiz: () => Promise<void>;
@@ -29,10 +30,11 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   error: null,
   quizComplete: null,
   levelFailed: false,
-  lastAnswerResult: null,
+  heartFailure: false, // Khởi tạo trạng thái mới
+  answerResult: null,
 
   startQuiz: async (levelId: string) => {
-    set({ isLoading: true, error: null, lastAnswerResult: null });
+    set({ isLoading: true, error: null, answerResult: null, heartFailure: false });
     try {
       console.log("Starting quiz with levelId:", levelId);
       const response = await publicApi.startQuiz(levelId);
@@ -47,9 +49,8 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         isLoading: false,
       });
     } catch (err) {
-      console.error("Start quiz error:", err);
       set({
-        error: err instanceof Error ? err.message : "Failed to start quiz",
+        error: err instanceof Error ? err.message : "Không thể bắt đầu quiz",
         isLoading: false,
       });
     }
@@ -60,17 +61,17 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     try {
       const { levelId } = get();
       if (!levelId) {
-        throw new Error("Level ID is not available");
+        throw new Error("Level ID không khả dụng");
       }
       const response = await publicApi.submitAnswer({ 
         levelId, 
         questionId, 
         userAnswer 
       });
-      console.log("Submit answer response:", response.data);
       const {
         isCorrect,
         message,
+        correctAnswer,
         heartsRemaining,
         nextQuestion,
         quizComplete,
@@ -79,12 +80,13 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
       set((state) => ({
         heartsRemaining,
-        currentQuestion: nextQuestion?.question || nextQuestion || null,
+        currentQuestion: nextQuestion?.question || nextQuestion || state.currentQuestion,
         totalQuestions: nextQuestion ? state.totalQuestions : state.totalQuestions,
         answers: [...state.answers, { questionId, userAnswer }],
         quizComplete: quizComplete || null,
         levelFailed: levelFailed || false,
-        lastAnswerResult: { isCorrect, message },
+        heartFailure: heartsRemaining === 0 && levelFailed, // Đặt heartFailure khi hết tim
+        answerResult: { isCorrect, message, correctAnswer },
         isLoading: false,
       }));
 
@@ -93,7 +95,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       }
     } catch (err) {
       set({
-        error: err instanceof Error ? err.message : "Failed to submit answer",
+        error: err instanceof Error ? err.message : "Không thể nộp câu trả lời",
         isLoading: false,
       });
     }
@@ -106,7 +108,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
         await publicApi.abandonQuiz(levelId);
       }
     } catch (err) {
-      console.error("Failed to abandon quiz:", err);
+      console.error("Không thể thoát quiz:", err);
     }
     set({
       attemptId: null,
@@ -117,7 +119,8 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       answers: [],
       quizComplete: null,
       levelFailed: false,
-      lastAnswerResult: null,
+      heartFailure: false,
+      answerResult: null,
       isLoading: false,
       error: null,
     });
