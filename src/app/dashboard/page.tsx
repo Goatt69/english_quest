@@ -58,12 +58,13 @@ interface Level {
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
+  const [completedLevels, setCompletedLevels] = useState<string[]>([]); // State để lưu level đã hoàn thành
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { logout } = useAuth();
 
-  // Fetch user data and sections on mount
+  // Fetch user data, sections, và thông tin completedLevels (giả định từ localStorage hoặc API)
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -72,34 +73,32 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
-  
-    // console.log("Token before fetching sections:", localStorage.getItem("token"));
-      
 
     const fetchSectionsAndLevels = async () => {
       try {
-        // Fetch sections
         const sectionsResponse = await apiFetch(API_ENDPOINTS.SECTIONS);
         const sectionsData = sectionsResponse.data;
 
-        // Fetch levels cho từng section
         const levelsPromises = sectionsData.map((section: Section) =>
           apiFetch(API_ENDPOINTS.LEVELS(section.id))
         );
         const levelsResponses = await Promise.all(levelsPromises);
         const levelsData = levelsResponses.map((res) => res.data);
 
-        // Kết hợp sections với levels
         const sectionsWithLevels = sectionsData.map((section: Section, index: number) => ({
           ...section,
           levels: levelsData[index],
         }));
 
         setSections(sectionsWithLevels);
+
+        // Giả định lấy danh sách completedLevels từ localStorage hoặc API
+        const storedCompletedLevels = localStorage.getItem("completedLevels");
+        if (storedCompletedLevels) {
+          setCompletedLevels(JSON.parse(storedCompletedLevels));
+        }
       } catch (err) {
         if (err instanceof Error && err.message.includes("401")) {
-          console.log("Unauthorized - Redirecting to login");
-          // localStorage.removeItem("token");
           logout();
           router.push("/login");
         } else {
@@ -113,19 +112,29 @@ export default function DashboardPage() {
     fetchSectionsAndLevels();
   }, [router]);
 
-  // Loading state
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
+  // Hàm kiểm tra level đã hoàn thành chưa
+  const isLevelCompleted = (levelId: string) => completedLevels.includes(levelId);
 
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Error: {error}
-      </div>
-    );
-  }
+  // Hàm xử lý reset level
+  const handleResetLevel = async (levelId: string) => {
+    try {
+      const response = await apiFetch(`${API_ENDPOINTS.QUIZ_ABANDON}/${levelId}`, {
+        method: "POST",
+      });
+      if (response.status) {
+        // Xóa level khỏi danh sách completedLevels
+        const updatedCompletedLevels = completedLevels.filter((id) => id !== levelId);
+        setCompletedLevels(updatedCompletedLevels);
+        localStorage.setItem("completedLevels", JSON.stringify(updatedCompletedLevels));
+        alert("Level đã được reset thành công!");
+      } else {
+        alert("Có lỗi xảy ra khi reset level.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi reset level:", err);
+      alert("Có lỗi xảy ra khi reset level.");
+    }
+  };
 
   // Access control logic for sections
   const canAccessSection = (section: Section) => {
@@ -239,13 +248,26 @@ export default function DashboardPage() {
                                     <p className="font-semibold">{level.title}</p>
                                     <p className="text-sm text-gray-600">Difficulty: {level.difficulty}</p>
                                   </div>
-                                  {canAccessLevel(level) ? (
-                                    <Link href={`/quiz/${level.id}`}>
-                                    <Button size="sm">Start</Button>
-                                  </Link>
-                                  ) : (
-                                    <Badge variant="outline">Locked</Badge>
-                                  )}
+                                  <div className="flex items-center space-x-2">
+                                    {canAccessLevel(level) ? (
+                                      <>
+                                        <Link href={`/quiz/${level.id}`}>
+                                          <Button size="sm">Start</Button>
+                                        </Link>
+                                        {isLevelCompleted(level.id) && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleResetLevel(level.id)}
+                                          >
+                                            Làm lại
+                                          </Button>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <Badge variant="outline">Locked</Badge>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                             </div>

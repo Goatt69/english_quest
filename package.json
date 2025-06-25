@@ -25,6 +25,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.18.1",
+    "gsap": "^3.13.0",
     "howler": "^2.2.4",
     "lucide-react": "^0.517.0",
     "next": "15.3.3",
