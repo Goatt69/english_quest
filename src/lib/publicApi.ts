@@ -31,6 +31,11 @@ interface QuizAnswerRequest {
   userAnswer: string;
 }
 
+interface QuizAbandonResponse {
+  status: boolean;
+  message: string;
+}
+
 export class PublicApiService {
   // Authentication
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
@@ -81,8 +86,8 @@ export class PublicApiService {
     })
   }
 
-  async abandonQuiz(levelId: string): Promise<void> {
-    return apiFetch<void>(API_ENDPOINTS.QUIZ_ABANDON(levelId), {
+  async abandonQuiz(levelId: string): Promise<QuizAbandonResponse> {
+    return apiFetch<QuizAbandonResponse>(API_ENDPOINTS.QUIZ_ABANDON(levelId), {
       method: "POST",
     })
   }

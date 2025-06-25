@@ -91,6 +91,7 @@ export interface QuizStartResponse {
 export interface QuizAnswerResponse {
   data: {
     isCorrect: boolean;
+    correctAnswer: string;
     message: string;
     heartsRemaining: number;
     nextQuestion?: {

@@ -109,18 +109,13 @@ export default function DashboardPage() {
   // Hàm xử lý reset level
   const handleResetLevel = async (levelId: string) => {
     try {
-      const response = await apiFetch(`${API_ENDPOINTS.QUIZ_ABANDON}/${levelId}`, {
-        method: "POST",
-      });
-      if (response.status) {
-        // Xóa level khỏi danh sách completedLevels
-        const updatedCompletedLevels = completedLevels.filter((id) => id !== levelId);
-        setCompletedLevels(updatedCompletedLevels);
-        localStorage.setItem("completedLevels", JSON.stringify(updatedCompletedLevels));
-        alert("Level đã được reset thành công!");
-      } else {
-        alert("Có lỗi xảy ra khi reset level.");
-      }
+      await publicApi.abandonQuiz(levelId);
+
+      // Remove level from completedLevels list
+      const updatedCompletedLevels = completedLevels.filter((id) => id !== levelId);
+      setCompletedLevels(updatedCompletedLevels);
+      localStorage.setItem("completedLevels", JSON.stringify(updatedCompletedLevels));
+      alert("Level đã được reset thành công!");
     } catch (err) {
       console.error("Lỗi khi reset level:", err);
       alert("Có lỗi xảy ra khi reset level.");
