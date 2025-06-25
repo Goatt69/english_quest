@@ -17,14 +17,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {apiFetch} from "@/lib/api";
 import {API_ENDPOINTS} from "@/lib/configURL";
+import { useAuth } from "@/components/AuthContext"; // Use AuthContext
 
-interface User {
-    userName: string;
-    email: string;
-    plan: string | number; // Allow both string and number
-}
-
-// Plan mapping functions
+// Plan mapping functions (keep these the same)
 const getPlanName = (plan: string | number): string => {
     const planValue = typeof plan === 'string' ? parseInt(plan) : plan;
     switch (planValue) {
@@ -45,28 +40,12 @@ const isPlanFree = (plan: string | number): boolean => {
 };
 
 export default function Navbar() {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { isLoggedIn, loading, user, logout, isAdmin } = useAuth(); // Use AuthContext
+    const [mounted, setMounted] = useState(false);
 
+    // Ensure component is mounted before rendering auth-dependent content
     useEffect(() => {
-      const checkAuth = () => {
-        const token = localStorage.getItem("token");
-        const userData = localStorage.getItem("user");
-      
-        if (token && userData) {
-          try {
-            const parsedUser = JSON.parse(userData);
-            setUser(parsedUser);
-          } catch (error) {
-            console.error("Error parsing user data:", error);
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-          }
-        }
-        setIsLoading(false);
-      };
-
-      checkAuth();
+        setMounted(true);
     }, []);
 
     const handleLogout = async () => {
@@ -80,10 +59,8 @@ export default function Navbar() {
             console.error("Logout API error:", error);
             // Continue with local logout even if API fails
         } finally {
-            // Always clear local storage and redirect
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            setUser(null);
+            // Use AuthContext logout
+            logout();
             window.location.href = "/";
         }
     };
@@ -111,6 +88,37 @@ export default function Navbar() {
                 return "bg-gray-500 text-white";
         }
     };
+
+    // Show skeleton during SSR and initial client load
+    if (!mounted) {
+        return (
+            <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+                <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
+                            <BookOpen className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-xl font-bold text-gray-900">English Quest</span>
+                    </div>
+                    
+                    <nav className="hidden md:flex items-center space-x-6">
+                        <Link href="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">
+                            Pricing
+                        </Link>
+                        <Link href="/leaderboard" className="text-gray-600 hover:text-gray-900 transition-colors">
+                            Leaderboard
+                        </Link>
+                    </nav>
+
+                    <div className="flex items-center space-x-4">
+                        <div className="animate-pulse">
+                            <div className="h-8 bg-gray-200 rounded w-20"></div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+        );
+    }
 
     return (
         <motion.header 
@@ -173,103 +181,117 @@ export default function Navbar() {
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                 >
-                    {isLoading ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full"
-                      />
-                    ) : user ? (
-                      // Authenticated User Menu
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="cursor-pointer"
-                          >
-                            <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-green-500 text-white text-sm">
-                                  {user.userName.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="hidden sm:block text-left">
-                                <p className="text-sm font-medium text-gray-900">{user.userName}</p>
-                                <div className="flex items-center space-x-1">
-                                  <Badge 
-                                    className={`text-xs px-2 py-0 ${getPlanColor(user.plan)}`}
-                                  >
-                                      {getPlanIcon(user.plan)}
-                                    <span>{getPlanName(user.plan)}</span>
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>
-                            <div className="flex flex-col space-y-1">
-                              <p className="text-sm font-medium">{user.userName}</p>
-                              <p className="text-xs text-gray-500">{user.email}</p>
-                            </div>
-                          </DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link href="/dashboard" className="flex items-center cursor-pointer">
-                              <User className="mr-2 h-4 w-4" />
-                              Dashboard
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href="/settings" className="flex items-center cursor-pointer">
-                              <Settings className="mr-2 h-4 w-4" />
-                              Settings
-                            </Link>
-                          </DropdownMenuItem>
-                          {/* Fixed condition to check for Free plan (0) */}
-                          {isPlanFree(user.plan) && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem asChild>
-                                <Link href="/pricing" className="flex items-center cursor-pointer text-blue-600">
-                                  <Crown className="mr-2 h-4 w-4" />
-                                  Upgrade Plan
-                                </Link>
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={handleLogout}
-                            className="flex items-center cursor-pointer text-red-600 focus:text-red-600"
-                          >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Sign Out
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    {loading ? (
+                        <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full"
+                        />
+                    ) : isLoggedIn ? (
+                        // Authenticated User Menu
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="cursor-pointer"
+                                >
+                                    <div className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-green-500 text-white text-sm">
+                                                {user?.userName?.charAt(0).toUpperCase() || 'U'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="hidden sm:block text-left">
+                                            <p className="text-sm font-medium text-gray-900">{user?.userName}</p>
+                                            <div className="flex items-center space-x-1">
+                                                <Badge 
+                                                    className={`text-xs px-2 py-0 ${getPlanColor(user?.plan || 0)}`}
+                                                >
+                                                    {getPlanIcon(user?.plan || 0)}
+                                                    <span>{getPlanName(user?.plan || 0)}</span>
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>
+                                    <div className="flex flex-col space-y-1">
+                                        <p className="text-sm font-medium">{user?.userName}</p>
+                                        <p className="text-xs text-gray-500">{user?.email}</p>
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link href="/dashboard" className="flex items-center cursor-pointer">
+                                        <User className="mr-2 h-4 w-4" />
+                                        Dashboard
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/settings" className="flex items-center cursor-pointer">
+                                        <Settings className="mr-2 h-4 w-4" />
+                                        Settings
+                                    </Link>
+                                </DropdownMenuItem>
+                                
+                                {/* Admin Panel Link - Only show for admin users */}
+                                {isAdmin() && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                           <Link href="/admin" className="flex items-center cursor-pointer text-red-600">
+                                                <Settings className="mr-2 h-4 w-4" />
+                                                Admin Panel
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                
+                                {/* Upgrade Plan - Only show for Free plan users */}
+                                {isPlanFree(user?.plan || 0) && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/pricing" className="flex items-center cursor-pointer text-blue-600">
+                                                <Crown className="mr-2 h-4 w-4" />
+                                                Upgrade Plan
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                    onClick={handleLogout}
+                                    className="flex items-center cursor-pointer text-red-600 focus:text-red-600"
+                                >
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    Sign Out
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     ) : (
-                      // Non-authenticated User Buttons
-                      <>
-                        <Link href="/login">
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <Button variant="ghost">Sign In</Button>
-                            </motion.div>
-                        </Link>
-                        <Link href="/register">
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <Button>Get Started</Button>
-                            </motion.div>
-                        </Link>
-                      </>
+                        // Non-authenticated User Buttons
+                        <>
+                            <Link href="/login">
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Button variant="ghost">Sign In</Button>
+                                </motion.div>
+                            </Link>
+                            <Link href="/register">
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Button>Get Started</Button>
+                                </motion.div>
+                            </Link>
+                        </>
                     )}
                 </motion.div>
             </div>

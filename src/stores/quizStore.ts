@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { apiFetch } from "@/lib/api";
-import { API_ENDPOINTS } from "@/lib/configURL";
+import { publicApi } from "@/lib/publicApi";
 
 interface QuizState {
   attemptId: string | null;
@@ -37,10 +36,9 @@ export const useQuizStore = create<QuizState>((set, get) => ({
   startQuiz: async (levelId: string) => {
     set({ isLoading: true, error: null, answerResult: null, heartFailure: false });
     try {
-      const response = await apiFetch(API_ENDPOINTS.QUIZ_START, {
-        method: "POST",
-        body: JSON.stringify({ levelId }),
-      });
+      console.log("Starting quiz with levelId:", levelId);
+      const response = await publicApi.startQuiz(levelId);
+      console.log("API Response:", response.data);
       const { attemptId, session, firstQuestion } = response.data;
       set({
         attemptId,
@@ -65,9 +63,10 @@ export const useQuizStore = create<QuizState>((set, get) => ({
       if (!levelId) {
         throw new Error("Level ID không khả dụng");
       }
-      const response = await apiFetch(API_ENDPOINTS.QUIZ_ANSWER, {
-        method: "POST",
-        body: JSON.stringify({ levelId, questionId, userAnswer }),
+      const response = await publicApi.submitAnswer({ 
+        levelId, 
+        questionId, 
+        userAnswer 
       });
       const {
         isCorrect,
@@ -81,7 +80,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
 
       set((state) => ({
         heartsRemaining,
-        currentQuestion: nextQuestion?.question || nextQuestion || state.currentQuestion, // Giữ currentQuestion
+        currentQuestion: nextQuestion?.question || nextQuestion || state.currentQuestion,
         totalQuestions: nextQuestion ? state.totalQuestions : state.totalQuestions,
         answers: [...state.answers, { questionId, userAnswer }],
         quizComplete: quizComplete || null,
@@ -106,10 +105,7 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     try {
       const { levelId } = get();
       if (levelId) {
-        const abandonUrl = API_ENDPOINTS.QUIZ_ABANDON(levelId);
-        await apiFetch(abandonUrl, {
-          method: "POST",
-        });
+        await publicApi.abandonQuiz(levelId);
       }
     } catch (err) {
       console.error("Không thể thoát quiz:", err);

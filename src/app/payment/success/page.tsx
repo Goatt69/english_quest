@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +45,21 @@ const celebrationVariants = {
   }
 };
 
-export default function PaymentSuccessPage() {
+// Loading component for Suspense fallback
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full"
+      />
+    </div>
+  );
+}
+
+// Separate component that uses useSearchParams
+function PaymentSuccessContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [paymentResult, setPaymentResult] = useState<any>(null);
   const router = useRouter();
@@ -104,17 +118,8 @@ export default function PaymentSuccessPage() {
     processPaymentReturn();
   }, [searchParams, router]);
 
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full"
-        />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
   
   return (
@@ -261,5 +266,14 @@ export default function PaymentSuccessPage() {
         </motion.div>
       </div>
     </motion.div>
+  );
+}
+
+// Main component with Suspense wrapper
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

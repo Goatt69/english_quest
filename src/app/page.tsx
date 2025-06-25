@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Check, Star, Zap, Crown, Users, BookOpen, Trophy, MessageCircle } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import SharedLayout from "@/components/SharedLayout";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -66,107 +67,109 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Hero Section */}
-      <motion.section 
-        className="py-20 px-4"
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-      >
-        <div className="container mx-auto text-center">
-          <motion.h1 
-            className="text-5xl font-bold text-gray-900 mb-6"
-            variants={itemVariants}
+      <SharedLayout>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+          {/* Hero Section */}
+          <motion.section
+              className="py-20 px-4"
+              initial="hidden"
+              animate="visible"
+              variants={containerVariants}
           >
-            Master Languages with
-            <motion.span 
-              className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-600"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-            >
-              {" "}
-              AI-Powered Learning
-            </motion.span>
-          </motion.h1>
-          
-          <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center"
-            variants={itemVariants}
-          >
-            <Link href="/register">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            <div className="container mx-auto text-center">
+              <motion.h1
+                  className="text-5xl font-bold text-gray-900 mb-6"
+                  variants={itemVariants}
               >
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+                Master Languages with
+                <motion.span
+                    className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-600"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
                 >
-                  Start Learning Free
-                </Button>
-              </motion.div>
-            </Link>
-            <Link href="/demo">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button size="lg" variant="outline">
-                  Try Demo
-                </Button>
-              </motion.div>
-            </Link>
-          </motion.div>
-        </div>
-      </motion.section>
+                  {" "}
+                  AI-Powered Learning
+                </motion.span>
+              </motion.h1>
 
-      {/* Features Section */}
-      <motion.section 
-        className="py-16 px-4 bg-white"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={containerVariants}
-      >
-        <div className="container mx-auto">
-          <motion.h2 
-            className="text-3xl font-bold text-center text-gray-900 mb-12"
-            variants={itemVariants}
-          >
-            Why Choose English Quest?
-          </motion.h2>
-          <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
-            variants={containerVariants}
-          >
-            {features.map((feature, index) => (
               <motion.div
-                key={index}
-                variants={cardVariants}
-                whileHover="hover"
+                  className="flex flex-col sm:flex-row gap-4 justify-center"
+                  variants={itemVariants}
               >
-                <Card className="text-center border-0 shadow-lg h-full">
-                  <CardHeader>
-                    <motion.div 
-                      className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-100 to-green-100 rounded-lg flex items-center justify-center text-blue-600 mb-4"
-                      whileHover={{ rotate: 360 }}
-                      transition={{ duration: 0.6 }}
+                <Link href="/login">
+                  <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                        size="lg"
+                        className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
                     >
-                      {feature.icon}
-                    </motion.div>
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </CardContent>
-                </Card>
+                      Start Learning Free
+                    </Button>
+                  </motion.div>
+                </Link>
+                <Link href="/dashboard">
+                  <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                  >
+                    <Button size="lg" variant="outline">
+                      Try now
+                    </Button>
+                  </motion.div>
+                </Link>
               </motion.div>
-            ))}
-          </motion.div>
+            </div>
+          </motion.section>
+
+          {/* Features Section */}
+          <motion.section
+              className="py-16 px-4 bg-white"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={containerVariants}
+          >
+            <div className="container mx-auto">
+              <motion.h2
+                  className="text-3xl font-bold text-center text-gray-900 mb-12"
+                  variants={itemVariants}
+              >
+                Why Choose English Quest?
+              </motion.h2>
+              <motion.div
+                  className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
+                  variants={containerVariants}
+              >
+                {features.map((feature, index) => (
+                    <motion.div
+                        key={index}
+                        variants={cardVariants}
+                        whileHover="hover"
+                    >
+                      <Card className="text-center border-0 shadow-lg h-full">
+                        <CardHeader>
+                          <motion.div
+                              className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-100 to-green-100 rounded-lg flex items-center justify-center text-blue-600 mb-4"
+                              whileHover={{ rotate: 360 }}
+                              transition={{ duration: 0.6 }}
+                          >
+                            {feature.icon}
+                          </motion.div>
+                          <CardTitle className="text-lg">{feature.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <CardDescription>{feature.description}</CardDescription>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                ))}
+              </motion.div>
+            </div>
+          </motion.section>
         </div>
-      </motion.section>
-    </div>
+      </SharedLayout>
   )
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,21 @@ const shakeVariants = {
   }
 };
 
-export default function PaymentFailedPage() {
+// Loading component for Suspense fallback
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full"
+      />
+    </div>
+  );
+}
+
+// Separate component that uses useSearchParams
+function PaymentFailedContent() {
   const searchParams = useSearchParams();
   const message = searchParams.get("message") || "Payment failed";
   const description = searchParams.get("description") || "Your payment could not be processed. Please try again.";
@@ -218,5 +233,14 @@ export default function PaymentFailedPage() {
         </motion.div>
       </div>
     </motion.div>
+  );
+}
+
+// Main component with Suspense wrapper
+export default function PaymentFailedPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <PaymentFailedContent />
+    </Suspense>
   );
 }

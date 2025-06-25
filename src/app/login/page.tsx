@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BookOpen, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
-import { API_ENDPOINTS } from "@/lib/configURL";
-import { useAuth } from '@/hooks/useAuth';
+import { publicApi } from "@/lib/publicApi"; // Use publicApi instead
+import { useAuth } from '@/components/AuthContext';
+
 type AuthFormData = {
   userName: string;
   email: string;
@@ -44,27 +44,33 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMessage(null);
     try {
-      const response = await apiFetch(API_ENDPOINTS.LOGIN, { // Sử dụng API_ENDPOINTS
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-        requiresAuth: false,
+      // Use publicApi.login method
+      const response = await publicApi.login({
+        email: formData.email,
+        password: formData.password,
       });
+      
       localStorage.setItem("token", response.accessToken);
-      if (response.user) {
-        localStorage.setItem("user", JSON.stringify(response.user));
-      }
+
+      const userWithRoles = {
+        ...response.user,
+        roles: response.roles || [] // Include roles from backend response
+      };
+
+      // Store user data in localStorage (keep this for compatibility)
+      localStorage.setItem("user", JSON.stringify(userWithRoles));
+
       console.log("Login successful:", response);
-      login(response.accessToken, response.user);
+
+      // Use AuthContext login method with the complete user data including roles
+      login(response.accessToken, userWithRoles);
+
       router.push("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
         const errorMessage = error.message;
         if (errorMessage.includes("401")) {
-          setErrorMessage("Invalid Email or Passsword! Please try again.");
+          setErrorMessage("Invalid Email or Password! Please try again.");
         } else {
           setErrorMessage("An unknown error occurred.");
         }
@@ -97,12 +103,8 @@ export default function LoginPage() {
     console.log("Request payload:", payload);
 
     try {
-      await apiFetch(API_ENDPOINTS.REGISTER, { // Sử dụng API_ENDPOINTS
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        requiresAuth: false,
-      });
+      // Use publicApi.register method
+      await publicApi.register(payload);
       setSuccessMessage("Registration successful! Please log in.");
     } catch (error) {
       if (error instanceof Error) {
@@ -311,7 +313,7 @@ export default function LoginPage() {
                   >
                     Log in
                   </button>
-                </p>
+                  </p>
               )}
             </div>
           </CardContent>
