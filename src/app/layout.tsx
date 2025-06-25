@@ -1,8 +1,5 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Navbar from "@/components/navbar";
-import Footer from "@/components/footer";
-import ClientChatboxWrapper from '../components/ClientChatboxWrapper';
 import { AuthProvider } from '@/components/AuthContext';
 import Script from 'next/script';
 
@@ -27,13 +24,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-      <Navbar/>
         <AuthProvider>
-          {children}
-          <ClientChatboxWrapper />
+            {children}
         </AuthProvider>
-      <Footer/>
-      </body>
+    </body>
     </html>
-  )
+    )
 }
