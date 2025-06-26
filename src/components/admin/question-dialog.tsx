@@ -10,10 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { type QuizQuestion, type QuizLevel, QuestionType } from "@/types/quiz"
+import { type QuizQuestion, type QuizLevel, QuestionType, QUESTION_TYPE_NAMES, type PatternData, type ListeningData } from "@/types/quiz"
 import { Plus, Trash2 } from "lucide-react"
 
-const questionTypeOptions = [
+// Updated to use proper Record type with index signature
+const questionTypeOptions: Array<{ value: number; label: string }> = [
   { value: QuestionType.FillInTheBlank, label: "Fill in the Blank" },
   { value: QuestionType.VocabularyMeaning, label: "Vocabulary Meaning" },
   { value: QuestionType.CorrectSentence, label: "Correct Sentence" },
@@ -33,8 +34,28 @@ interface QuestionDialogProps {
   onSave: (data: Partial<QuizQuestion>) => void
 }
 
+// Form data interface with string fields for JSON editing
+interface FormData {
+  levelId: string;
+  type: QuestionType;
+  text: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  audioUrl: string;
+  hasAudio: boolean;
+  imageUrl: string;
+  hasImage: boolean;
+  patternJson: string; // String for JSON editing
+  listeningJson: string; // String for JSON editing
+  points: number;
+  difficulty: number;
+  order: number;
+  isActive: boolean;
+}
+
 export function QuestionDialog({ open, onOpenChange, question, levels, onSave }: QuestionDialogProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     levelId: "",
     type: QuestionType.MultipleChoice,
     text: "",
@@ -45,8 +66,8 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
     hasAudio: false,
     imageUrl: "",
     hasImage: false,
-    pattern: "",
-    listening: "",
+    patternJson: "",
+    listeningJson: "",
     points: 1,
     difficulty: 0,
     order: 1,
@@ -66,8 +87,8 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
         hasAudio: question.hasAudio,
         imageUrl: question.imageUrl || "",
         hasImage: question.hasImage,
-        pattern: question.pattern || "",
-        listening: question.listening || "",
+        patternJson: question.pattern ? JSON.stringify(question.pattern, null, 2) : "",
+        listeningJson: question.listening ? JSON.stringify(question.listening, null, 2) : "",
         points: question.points,
         difficulty: question.difficulty,
         order: question.order,
@@ -85,8 +106,8 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
         hasAudio: false,
         imageUrl: "",
         hasImage: false,
-        pattern: "",
-        listening: "",
+        patternJson: "",
+        listeningJson: "",
         points: 1,
         difficulty: 0,
         order: 1,
@@ -98,10 +119,48 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const filteredOptions = formData.options.filter((option) => option.trim() !== "")
-    onSave({
-      ...formData,
+    
+    // Prepare the data to save - convert form data to QuizQuestion format
+    const dataToSave: Partial<QuizQuestion> = {
+      levelId: formData.levelId,
+      type: formData.type,
+      text: formData.text,
       options: filteredOptions,
-    })
+      correctAnswer: formData.correctAnswer,
+      explanation: formData.explanation,
+      audioUrl: formData.audioUrl || undefined,
+      hasAudio: formData.hasAudio,
+      imageUrl: formData.imageUrl || undefined,
+      hasImage: formData.hasImage,
+      points: formData.points,
+      difficulty: formData.difficulty,
+      order: formData.order,
+      isActive: formData.isActive,
+    }
+
+    // Parse pattern JSON if it exists and is valid
+    if (formData.patternJson.trim()) {
+      try {
+        const parsedPattern = JSON.parse(formData.patternJson) as PatternData
+        dataToSave.pattern = parsedPattern
+      } catch (error) {
+        alert("Invalid pattern JSON format. Please check your JSON syntax.")
+        return
+      }
+    }
+
+    // Parse listening JSON if it exists and is valid
+    if (formData.listeningJson.trim()) {
+      try {
+        const parsedListening = JSON.parse(formData.listeningJson) as ListeningData
+        dataToSave.listening = parsedListening
+      } catch (error) {
+        alert("Invalid listening JSON format. Please check your JSON syntax.")
+        return
+      }
+    }
+
+    onSave(dataToSave)
   }
 
   const addOption = () => {
@@ -125,6 +184,33 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
     setFormData({
       ...formData,
       options: newOptions,
+    })
+  }
+
+  // Helper function to set default JSON templates
+  const setDefaultPatternJson = () => {
+    const defaultPattern = {
+      BaseSentence: "He is a teacher.",
+      ExampleSentence: "She is a doctor.",
+      QuestionSentence: "They ___ students.",
+      Pattern: "Subject + be verb + article + noun"
+    }
+    setFormData({
+      ...formData,
+      patternJson: JSON.stringify(defaultPattern, null, 2)
+    })
+  }
+
+  const setDefaultListeningJson = () => {
+    const defaultListening = {
+      AudioText: "I am a boy",
+      WordBank: ["I", "am", "a", "boy", "girl", "run", "happy"],
+      PlaybackSpeed: 1,
+      MaxReplays: 3
+    }
+    setFormData({
+      ...formData,
+      listeningJson: JSON.stringify(defaultListening, null, 2)
     })
   }
 
@@ -156,7 +242,7 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
               <Label htmlFor="type">Question Type</Label>
               <Select
                 value={formData.type.toString()}
-                onValueChange={(value) => setFormData({ ...formData, type: Number.parseInt(value) as QuestionType })}
+                onValueChange={(value) => setFormData({ ...formData, type: parseInt(value) as QuestionType })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -242,7 +328,7 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
                 type="number"
                 min="1"
                 value={formData.points}
-                onChange={(e) => setFormData({ ...formData, points: Number.parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 1 })}
                 required
               />
             </div>
@@ -254,7 +340,7 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
                 type="number"
                 min="0"
                 value={formData.difficulty}
-                onChange={(e) => setFormData({ ...formData, difficulty: Number.parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, difficulty: parseInt(e.target.value) || 0 })}
                 required
               />
             </div>
@@ -266,7 +352,7 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
                 type="number"
                 min="1"
                 value={formData.order}
-                onChange={(e) => setFormData({ ...formData, order: Number.parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 1 })}
                 required
               />
             </div>
@@ -296,23 +382,43 @@ export function QuestionDialog({ open, onOpenChange, question, levels, onSave }:
 
           {formData.type === QuestionType.PatternRecognition && (
             <div className="space-y-2">
-              <Label htmlFor="pattern">Pattern</Label>
-              <Input
+              <div className="flex items-center justify-between">
+                <Label htmlFor="pattern">Pattern (JSON)</Label>
+                <Button type="button" variant="outline" size="sm" onClick={setDefaultPatternJson}>
+                  Use Template
+                </Button>
+              </div>
+              <Textarea
                 id="pattern"
-                value={formData.pattern}
-                onChange={(e) => setFormData({ ...formData, pattern: e.target.value })}
+                value={formData.patternJson}
+                onChange={(e) => setFormData({ ...formData, patternJson: e.target.value })}
+                rows={6}
+                className="font-mono text-sm"
               />
+              <p className="text-xs text-gray-500">
+                Enter JSON format with BaseSentence, ExampleSentence, QuestionSentence, and Pattern fields
+              </p>
             </div>
           )}
 
           {formData.type === QuestionType.ListeningComprehension && (
             <div className="space-y-2">
-              <Label htmlFor="listening">Listening Content</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="listening">Listening Content (JSON)</Label>
+                <Button type="button" variant="outline" size="sm" onClick={setDefaultListeningJson}>
+                  Use Template
+                </Button>
+              </div>
               <Textarea
                 id="listening"
-                value={formData.listening}
-                onChange={(e) => setFormData({ ...formData, listening: e.target.value })}
+                value={formData.listeningJson}
+                onChange={(e) => setFormData({ ...formData, listeningJson: e.target.value })}
+                rows={6}
+                className="font-mono text-sm"
               />
+              <p className="text-xs text-gray-500">
+                Enter JSON format with AudioText, WordBank, PlaybackSpeed, and MaxReplays fields
+              </p>
             </div>
           )}
 

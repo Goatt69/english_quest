@@ -6,7 +6,9 @@ import {
   QuizSection,
   QuizLevel,
   extractSectionsData,
-  extractLevelsData, QuizAnswerResponse, QuizStartResponse
+  extractLevelsData, 
+  QuizAnswerResponse, 
+  QuizStartResponse
 } from '@/types/quiz'
 
 // Request interfaces
@@ -62,16 +64,20 @@ export class PublicApiService {
 
   // Public sections and levels - handle both response formats
   async getSections(): Promise<QuizSection[]> {
-    const response = await apiFetch<SectionsResponse>(API_ENDPOINTS.SECTIONS);
+    const response = await apiFetch<SectionsResponse>(API_ENDPOINTS.SECTIONS , {
+      cache: 'no-store'
+    });
     return extractSectionsData(response);
   }
 
   async getLevels(sectionId: string): Promise<QuizLevel[]> {
-    const response = await apiFetch<LevelsResponse>(API_ENDPOINTS.LEVELS(sectionId));
+    const response = await apiFetch<LevelsResponse>(API_ENDPOINTS.LEVELS(sectionId) , {
+      cache: 'no-store'
+    });
     return extractLevelsData(response);
   }
 
-  // Quiz
+  // Quiz - Updated to match actual API response structure
   async startQuiz(levelId: string): Promise<QuizStartResponse> {
     return apiFetch<QuizStartResponse>(API_ENDPOINTS.QUIZ_START, {
       method: "POST",

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import PaymentForm from "@/components/payment/PaymentForm";
 import { createPayment } from "@/lib/payment";
 import { toast } from "@/hooks/use-toast";
+import SharedLayout from "@/components/SharedLayout";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -88,15 +89,17 @@ export default function PaymentPage() {
     }
   };
   return (
-    <motion.div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      <div className="container mx-auto px-4 py-16">
-        <PaymentForm onPayment={handlePayment} isLoading={isLoading} />
-      </div>
-    </motion.div>
+      <SharedLayout showFooter={false} showChatbox={false}>
+        <motion.div
+            className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+        >
+          <div className="container mx-auto px-4 py-16">
+            <PaymentForm onPayment={handlePayment} isLoading={isLoading} />
+          </div>
+        </motion.div>
+      </SharedLayout>
   );
 }

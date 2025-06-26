@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-interface CorrectSentenceProps {
+interface FillInTheBlankQuestionProps {
   question: {
     id: string;
     text: string;
@@ -13,11 +13,11 @@ interface CorrectSentenceProps {
   setSelectedAnswer: (answer: string) => void;
 }
 
-export default function CorrectSentence({
+export default function FillInTheBlankQuestion({
   question,
   selectedAnswer,
   setSelectedAnswer,
-}: CorrectSentenceProps) {
+}: FillInTheBlankQuestionProps) {
   return (
     <motion.div 
       className="space-y-4"
@@ -45,10 +45,25 @@ export default function CorrectSentence({
           >
             <Button
               variant={selectedAnswer === option ? "default" : "outline"}
-              className="w-full text-left justify-start py-2 px-4 hover:bg-gray-100 transition-all duration-200"
+              className="w-full text-left justify-start py-3 px-4 hover:bg-gray-100 transition-colors"
               onClick={() => setSelectedAnswer(option)}
             >
-              {option}
+              <motion.span 
+                className="font-medium"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+              >
+                {String.fromCharCode(65 + index)}.
+              </motion.span>
+              <motion.span 
+                className="ml-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 + index * 0.1 }}
+              >
+                {option}
+              </motion.span>
             </Button>
           </motion.div>
         ))}
