@@ -9,12 +9,13 @@ import { Plus, Edit, Trash2 } from "lucide-react"
 import { QuestionDialog } from "@/components/admin/question-dialog"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import { adminApi } from "@/lib/adminApi"
-import { type QuizQuestion, type QuizLevel, type QuizSection, QuestionType } from "@/types/quiz"
+import { type QuizQuestion, type QuizLevel, type QuizSection, QuestionType, getQuestionTypeName } from "@/types/quiz"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import SharedLayout from "@/components/SharedLayout";
 
-const questionTypeNames = {
+// Updated to use proper Record type with index signature
+const questionTypeNames: Record<number, string> = {
   [QuestionType.FillInTheBlank]: "Fill in the Blank",
   [QuestionType.VocabularyMeaning]: "Vocabulary Meaning",
   [QuestionType.CorrectSentence]: "Correct Sentence",
@@ -171,6 +172,11 @@ export default function QuestionsPage() {
     }
   }
 
+  // Helper function to safely get question type name
+  const getQuestionTypeDisplayName = (type: number): string => {
+    return questionTypeNames[type] || getQuestionTypeName(type) || `Type ${type}`;
+  }
+
   if (loading) {
     return (
         <div className="flex items-center justify-center h-screen">
@@ -230,7 +236,7 @@ export default function QuestionsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">{questionTypeNames[question.type]}</Badge>
+                          <Badge variant="outline">{getQuestionTypeDisplayName(question.type)}</Badge>
                           <Badge variant="secondary">Order: {question.order}</Badge>
                           <Badge variant="secondary">Points: {question.points}</Badge>
                         </div>
